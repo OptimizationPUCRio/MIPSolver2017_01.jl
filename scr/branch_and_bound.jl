@@ -43,20 +43,30 @@ function _bound(model::JuMP.Model, problem_head::head)
 
     # bound by optimality
   elseif satus == :Optimal && _selectInfeasableVariable(model) == 0
+      # update best solution if better
+    if problem_head.best_solution.status == :NotSolved  # First feasable solution
+      problem_head.best_solution = model
+    elseif getobjectivesense(model) == :Max && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
+      problem_head.best_solution = model
+    elseif getobjectivesense(model) == :Min && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+      problem_head.best_solution = model
+    end
     return false  #No branch needed
-    problem_head.best_solution = model # update best solution
 
     # bound by limits
-  elseif  problem_head.best_solution.status != :NotSolved && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+  elseif  getobjectivesense(model) == :Max && problem_head.best_solution.status != :NotSolved && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+    return false  #No branch needed
+  elseif  getobjectivesense(model) == :Min && problem_head.best_solution.status != :NotSolved && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
     return false  #No branch needed
   end
-    
+
   return true
 end
 
 function _branch_and_bound(problem_head::head)
   maxiter = 25
-  # start loop
+  iter = 1
+  while !isempty(head.problem_list) && iter <= maxiter # start loop
 
     # select
     model = dequeue!(problem_head.problem_list)
@@ -68,10 +78,15 @@ function _branch_and_bound(problem_head::head)
     if shouldBranch
       _branch(model, problem_head)
     end
+    iter = iter+1
+  end # end loop
 
-  # end loop
+  # return status
+  if iter > maxiter
+    return :UserLimit
+  end
 
-  # return
+  return :Optimal
 
 end
 
@@ -83,5 +98,7 @@ function solveMIP(m::JuMP.Model)
 
   # branch and bound
   _branch_and_bound(treehead)
+
+  # update solution on original model
 
 end
