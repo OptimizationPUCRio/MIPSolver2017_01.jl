@@ -1,15 +1,12 @@
 using JuMP
+using DataStructures
 
 mutable struct head
-  problem_list
-  best_solution
-  relaxarion
+  problem_list::Queue(JuMP.Model)
   model::JuMP.Model
-  int_variables
-  bin_variables
+  best_solution::JuMP.Model
 end
 
-mutable struct node
-  relaxarion
-  model::JuMP.Model
-end
+# mutable struct node
+#   model::JuMP.Model
+# end
