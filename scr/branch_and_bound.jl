@@ -14,9 +14,9 @@ end
 function _branch(model::JuMP.Model, problem_head::head)
   # find one variable which breaks feasability
   indVariable = _selectInfeasableVariable(model)
-  if ind == 0
+  if indVariable == 0
     return false  # No branch necessary
-
+  end
   # creates 2 corresponding juMP models breaking the feasable reagion in 2
   leftChild = copy(model)
   leftChild.colUpper[indVariable] = 0
@@ -27,8 +27,8 @@ function _branch(model::JuMP.Model, problem_head::head)
   rightChild.colLower[indVariable] = 1
 
   # Adds the 2 problems to the problem_list
-  enqueue!(problem_list, leftChild)
-  enqueue!(problem_list, rightChild)
+  enqueue!(problem_head.problem_list, leftChild)
+  enqueue!(problem_head.problem_list, rightChild)
 
   return true  # branch completed successfully
 end
@@ -38,25 +38,35 @@ function _bound(model::JuMP.Model, problem_head::head)
   status = solve(model, relaxation=true)
 
     # bound by infeasability
-  if satus == :Infeasible
+  if status == :Infeasible
     return false  #No branch needed
 
     # bound by optimality
-  elseif satus == :Optimal && _selectInfeasableVariable(model) == 0
+  elseif status == :Optimal && _selectInfeasableVariable(model) == 0
+      # update best solution if better
+    if prod(isnan(problem_head.best_solution.colVal)) # MathProgBase.status(problem_head.best_solution.internalModel) == :NotSolved  # First feasable solution
+      problem_head.best_solution = model
+    elseif getobjectivesense(model) == :Max && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
+      problem_head.best_solution = model
+    elseif getobjectivesense(model) == :Min && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+      problem_head.best_solution = model
+    end
     return false  #No branch needed
-    problem_head.best_solution = model # update best solution
 
     # bound by limits
-  elseif  problem_head.best_solution.status != :NotSolved && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+  elseif  getobjectivesense(model) == :Max && prod(isnan(problem_head.best_solution.colVal)) && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+    return false  #No branch needed
+  elseif  getobjectivesense(model) == :Min && prod(isnan(problem_head.best_solution.colVal)) && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
     return false  #No branch needed
   end
-    
+
   return true
 end
 
 function _branch_and_bound(problem_head::head)
   maxiter = 25
-  # start loop
+  iter = 1
+  while !isempty(problem_head.problem_list) && iter <= maxiter # start loop
 
     # select
     model = dequeue!(problem_head.problem_list)
@@ -68,10 +78,15 @@ function _branch_and_bound(problem_head::head)
     if shouldBranch
       _branch(model, problem_head)
     end
+    iter = iter+1
+  end # end loop
 
-  # end loop
+  # return status
+  if iter > maxiter
+    return :UserLimit
+  end
 
-  # return
+  return :Optimal
 
 end
 
@@ -82,6 +97,12 @@ function solveMIP(m::JuMP.Model)
   treehead = head(problem_list, m, m)
 
   # branch and bound
-  _branch_and_bound(treehead)
+  prestatus = _branch_and_bound(treehead)
+
+  # update solution on original model
+
+  treehead.model.objVal = treehead.best_solution.objVal
+  treehead.model.colVal = treehead.best_solution.colVal
+  return prestatus
 
 end
