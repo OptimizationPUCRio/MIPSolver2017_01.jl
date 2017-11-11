@@ -19,10 +19,12 @@ function _branch(model::JuMP.Model, problem_head::head)
   end
   # creates 2 corresponding juMP models breaking the feasable reagion in 2
   leftChild = deepcopy(model)
+  leftChild.objBound = getobjectivevalue(model)
   leftChild.colUpper[indVariable] = 0
   leftChild.colLower[indVariable] = 0
 
   rightChild = deepcopy(model)
+  rightChild.objBound = getobjectivevalue(model)
   rightChild.colUpper[indVariable] = 1
   rightChild.colLower[indVariable] = 1
 
@@ -67,8 +69,29 @@ function _bound(model::JuMP.Model, problem_head::head)
   return true,status
 end
 
+function _update_bestbound(problem_head::head)
+  if getobjectivesense(problem_head.model) == :Max
+    bestupper = front(problem_head.problem_list).objBound
+    for prob in problem_head.problem_list
+      if prob.objBound > bestupper
+        bestupper = prob.objBound
+      end
+    end
+    problem_head.model.objBound = bestupper
+  else
+    bestlower = front(problem_head.problem_list).objBound
+    for prob in problem_head.problem_list
+      if prob.objBound < bestlower
+        bestlower = prob.objBound
+      end
+    end
+    problem_head.model.objBound = bestlower
+  end
+end
+
 function _branch_and_bound(problem_head::head)
   maxiter = 25
+  tol = 1E-07
   iter = 1
   ## First iteraction ##
   # select
@@ -87,7 +110,16 @@ function _branch_and_bound(problem_head::head)
   end
 
   ## Branch and Bound Loop ##
-  while !isempty(problem_head.problem_list) && iter <= maxiter # start loop
+  while !isempty(problem_head.problem_list) && iter <= maxiter  # start loop
+    # stop condition:
+    if problem_head.best_solution.ext[:status] != :NotSolved
+      if abs(problem_head.model.objBound - problem_head.best_solution.objVal) < tol
+        break
+      end
+    end
+
+    # update bestbound
+    _update_bestbound(problem_head)
 
     # select
     model = dequeue!(problem_head.problem_list)
@@ -136,6 +168,7 @@ function solveMIP(m::JuMP.Model)
 
   treehead.model.objVal = treehead.best_solution.objVal
   treehead.model.colVal = treehead.best_solution.colVal
+  m.ext[:status] = status
   return status
 
 end
