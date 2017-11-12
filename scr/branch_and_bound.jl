@@ -90,7 +90,7 @@ function _update_bestbound(problem_head::head)
 end
 
 function _branch_and_bound(problem_head::head)
-  maxiter = 25
+  maxiter = 2000
   tol = 1E-07
   iter = 1
   ## First iteraction ##
@@ -145,7 +145,10 @@ end
 
 function solveMIP(m::JuMP.Model)
   # initialize
+  tic()
   m.ext[:status] = :NotSolved
+  m.ext[:nodes] = 0
+  m.ext[:integersolutions] = 0
   problem_list = Queue(JuMP.Model)
   enqueue!(problem_list, deepcopy(m))
   treehead = head(problem_list, m, m)
@@ -155,12 +158,15 @@ function solveMIP(m::JuMP.Model)
 
   if status == :Unbounded
     m.ext[:status] = :Unbounded
+    m.ext[:time] = toc()
     return status
   elseif status == :Infeasible
     m.ext[:status] = :Infeasible
+    m.ext[:time] = toc()
     return status
   elseif prod(isnan(treehead.best_solution.colVal))
     m.ext[:status] = :Infeasible
+    m.ext[:time] = toc()
     return :Infeasible
   end
 
@@ -169,6 +175,7 @@ function solveMIP(m::JuMP.Model)
   treehead.model.objVal = treehead.best_solution.objVal
   treehead.model.colVal = treehead.best_solution.colVal
   m.ext[:status] = status
+  m.ext[:time] = toc()
   return status
 
 end
