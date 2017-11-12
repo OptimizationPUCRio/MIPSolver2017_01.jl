@@ -49,8 +49,10 @@ function _bound(model::JuMP.Model, problem_head::head)
 
     # bound by optimality
   elseif status == :Optimal && _selectInfeasableVariable(model) == 0
+    problem_head.model.ext[:integersolutions] = problem_head.model.ext[:integersolutions]+1
+    model.ext[:status] = :Optimal
       # update best solution if better
-    if prod(isnan(problem_head.best_solution.colVal)) # MathProgBase.status(problem_head.best_solution.internalModel) == :NotSolved  # First feasable solution
+    if problem_head.best_solution.ext[:status] == :NotSolved # MathProgBase.status(problem_head.best_solution.internalModel) == :NotSolved  # First feasable solution
       problem_head.best_solution = model
     elseif getobjectivesense(model) == :Max && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
       problem_head.best_solution = model
@@ -60,9 +62,9 @@ function _bound(model::JuMP.Model, problem_head::head)
     return false,status  #No branch needed
 
     # bound by limits
-  elseif  getobjectivesense(model) == :Max && prod(isnan(problem_head.best_solution.colVal)) && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
+  elseif  getobjectivesense(model) == :Max && problem_head.best_solution.ext[:status] != :NotSolved && getobjectivevalue(problem_head.best_solution) >  getobjectivevalue(model)
     return false,status  #No branch needed
-  elseif  getobjectivesense(model) == :Min && prod(isnan(problem_head.best_solution.colVal)) && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
+  elseif  getobjectivesense(model) == :Min && problem_head.best_solution.ext[:status] != :NotSolved && getobjectivevalue(problem_head.best_solution) <  getobjectivevalue(model)
     return false,status  #No branch needed
   end
 
@@ -96,6 +98,7 @@ function _branch_and_bound(problem_head::head)
   ## First iteraction ##
   # select
   model = dequeue!(problem_head.problem_list)
+  problem_head.model.ext[:nodes] = problem_head.model.ext[:nodes]+1
 
   # solve relaxation and bound
   shouldBranch,status = _bound(model, problem_head)
@@ -123,6 +126,7 @@ function _branch_and_bound(problem_head::head)
 
     # select
     model = dequeue!(problem_head.problem_list)
+    problem_head.model.ext[:nodes] = problem_head.model.ext[:nodes]+1
 
     # solve relaxation and bound
     shouldBranch,status = _bound(model, problem_head)
@@ -145,7 +149,10 @@ end
 
 function solveMIP(m::JuMP.Model)
   # initialize
+  tic()
   m.ext[:status] = :NotSolved
+  m.ext[:nodes] = 0
+  m.ext[:integersolutions] = 0
   problem_list = Queue(JuMP.Model)
   enqueue!(problem_list, deepcopy(m))
   treehead = head(problem_list, m, m)
@@ -155,12 +162,15 @@ function solveMIP(m::JuMP.Model)
 
   if status == :Unbounded
     m.ext[:status] = :Unbounded
+    m.ext[:time] = toc()
     return status
   elseif status == :Infeasible
     m.ext[:status] = :Infeasible
+    m.ext[:time] = toc()
     return status
-  elseif prod(isnan(treehead.best_solution.colVal))
+  elseif treehead.best_solution.ext[:status] == :NotSolved
     m.ext[:status] = :Infeasible
+    m.ext[:time] = toc()
     return :Infeasible
   end
 
@@ -169,6 +179,7 @@ function solveMIP(m::JuMP.Model)
   treehead.model.objVal = treehead.best_solution.objVal
   treehead.model.colVal = treehead.best_solution.colVal
   m.ext[:status] = status
+  m.ext[:time] = toc()
   return status
 
 end
