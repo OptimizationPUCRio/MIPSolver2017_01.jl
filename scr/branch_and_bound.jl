@@ -92,7 +92,7 @@ function _update_bestbound(problem_head::head)
 end
 
 function _branch_and_bound(problem_head::head)
-  maxiter = 25
+  maxiter = 120
   tol = 1E-07
   iter = 1
   ## First iteraction ##
@@ -125,7 +125,12 @@ function _branch_and_bound(problem_head::head)
     _update_bestbound(problem_head)
 
     # select
-    model = dequeue!(problem_head.problem_list)
+    if problem_head.best_solution.ext[:status] == :NotSolved
+      model = pop!(problem_head.problem_list.store)
+    else
+      model = dequeue!(problem_head.problem_list)
+    end
+
     problem_head.model.ext[:nodes] = problem_head.model.ext[:nodes]+1
 
     # solve relaxation and bound

@@ -24,3 +24,7 @@ test3(solveMIP, GurobiSolver())
 test3_2(solveMIP, GurobiSolver())
 test3_3(solveMIP, GurobiSolver())
 test_feature_selection_pequeno_viavel(solveMIP, GurobiSolver())
+test_feature_selection_pequeno_inviavel(solveMIP, GurobiSolver())
+
+test_feature_selection_medio(solveMIP, GurobiSolver())
+test_feature_selection_grande(solveMIP, GurobiSolver())
