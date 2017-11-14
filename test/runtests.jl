@@ -1,6 +1,7 @@
 using Gurobi
 include("../../MIPTests.jl/miptests.jl")
-include("../scr/branch_and_bound.jl")  # temporario antes da criacao do modulo
+#include("../scr/branch_and_bound.jl")  # temporario antes da criacao do modulo
+using AndrewMIPsolver
 
 
 test1(solveMIP, GurobiSolver())
