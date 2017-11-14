@@ -1,4 +1,4 @@
-module AndrewMILPsolver
+module andrewmipsolver
 
 export solveMIP
 
