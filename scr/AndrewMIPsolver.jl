@@ -1,4 +1,4 @@
-module MIPSolver2017_01
+module AndrewMIPsolver
 
 export solveMIP
 
