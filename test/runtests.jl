@@ -1,6 +1,6 @@
 using Gurobi
 include("../../MIPTests.jl/miptests.jl")
-#include("../scr/branch_and_bound.jl")  # temporario antes da criacao do modulo
+
 using andrewmipsolver
 
 
@@ -9,6 +9,22 @@ test2(solveMIP, GurobiSolver())
 
 testSudoku(solveMIP, GurobiSolver())
 testInfeasibleKnapsack(solveMIP, GurobiSolver())
+testUnboundedKnapsack(solveMIP, GurobiSolver())
+testInfeasibleUC(solveMIP, GurobiSolver())
+test_PL_Simples_Raphael(solveMIP, GurobiSolver())
+test_PL_Infeasible_Raphael(solveMIP, GurobiSolver())
+test_Minimal_UC(solveMIP, GurobiSolver())
+testSudoku4x4(solveMIP, GurobiSolver())
+
+test_rv_1(solveMIP, GurobiSolver())
+test_rv_2(solveMIP, GurobiSolver())
+test_rv_3(solveMIP, GurobiSolver())
+test_rv_4(solveMIP, GurobiSolver())
+test_rv_5(solveMIP, GurobiSolver())
+test_rv_6(solveMIP, GurobiSolver())
+test_rv_7(solveMIP, GurobiSolver())
+test_rv_8(solveMIP, GurobiSolver())
+test_optimal_dispatch(solveMIP, GurobiSolver())
 
 test_PL_Simples_Brito(solveMIP, GurobiSolver())
 test_PL_Infeasible_Brito(solveMIP, GurobiSolver())
@@ -32,3 +48,5 @@ teste_PL_andrew_inviavel(solveMIP, GurobiSolver())
 
 test_feature_selection_medio(solveMIP, GurobiSolver())
 test_feature_selection_grande(solveMIP, GurobiSolver())
+
+test_P1_Andrew_Bianca_viavel(solveMIP, GurobiSolver())

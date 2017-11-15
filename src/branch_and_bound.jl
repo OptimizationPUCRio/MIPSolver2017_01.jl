@@ -49,7 +49,7 @@ function _bound(model::JuMP.Model, problem_head::head)
 
     # bound by optimality
   elseif status == :Optimal && _selectInfeasableVariable(model) == 0
-    problem_head.model.ext[:integersolutions] = problem_head.model.ext[:integersolutions]+1
+    problem_head.model.ext[:intsols] = problem_head.model.ext[:intsols]+1
     model.ext[:status] = :Optimal
       # update best solution if better
     if problem_head.best_solution.ext[:status] == :NotSolved # MathProgBase.status(problem_head.best_solution.internalModel) == :NotSolved  # First feasable solution
@@ -157,7 +157,7 @@ function solveMIP(m::JuMP.Model)
   tic()
   m.ext[:status] = :NotSolved
   m.ext[:nodes] = 0
-  m.ext[:integersolutions] = 0
+  m.ext[:intsols] = 0
   problem_list = Queue(JuMP.Model)
   enqueue!(problem_list, deepcopy(m))
   treehead = head(problem_list, m, m)
