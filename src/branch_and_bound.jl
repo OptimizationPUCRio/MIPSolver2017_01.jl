@@ -116,7 +116,7 @@ function _branch_and_bound(problem_head::head)
   
   ## Branch and Bound Loop ##
   while !isempty(problem_head.problem_list) && iter <= maxiter  # start loop
-    if (time_ns()-jg_time0)/1e-9 > 180
+    if (time_ns()-jg_time0)/1e9 > 180
       return :UserLimit
     end
     # stop condition:
