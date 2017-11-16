@@ -111,9 +111,14 @@ function _branch_and_bound(problem_head::head)
   if shouldBranch
     _branch(model, problem_head)
   end
-
+  
+  jg_time0 = time_ns()
+  
   ## Branch and Bound Loop ##
   while !isempty(problem_head.problem_list) && iter <= maxiter  # start loop
+    if (time_ns()-jg_time0)/1e-9 > 180
+      return :UserLimit
+    end
     # stop condition:
     if problem_head.best_solution.ext[:status] != :NotSolved
       if abs(problem_head.model.objBound - problem_head.best_solution.objVal) < tol
