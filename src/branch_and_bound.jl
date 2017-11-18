@@ -92,7 +92,7 @@ function _update_bestbound(problem_head::head)
 end
 
 function _branch_and_bound(problem_head::head)
-  maxiter = 120
+  maxiter = 1200
   tol = 1E-04
   iter = 1
   ## First iteraction ##
